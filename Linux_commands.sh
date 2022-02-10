@@ -4,9 +4,9 @@ TARGET_FOLDER="/destination/path/to/copy"
 
 BOX_IP=127.0.0.1
 
-scp -o "StrictHostKeyChecking=no" -i ./$filename -r $REPO_NAME/searchdata/src/main/airflow/scripts/l2/l2_ls/retraining/* fk-search-ranking@$BOX_IP:${TARGET_FOLDER} 
+scp -o "StrictHostKeyChecking=no" -i ./$filename -r $REPO_NAME/path/* fk-search-ranking@$BOX_IP:${TARGET_FOLDER} 
 
-scp -o "StrictHostKeyChecking=no" -i ./$filename -r $REPO_NAME/searchdata/src/main/airflow/scripts/l2/retraining_common/* fk-search-ranking@$BOX_IP:${TARGET_FOLDER}
+scp -o "StrictHostKeyChecking=no" -i ./$filename -r $REPO_NAME/path/* fk-search-ranking@$BOX_IP:${TARGET_FOLDER}
 
 #clean up 
 ##################################################################

@@ -398,5 +398,84 @@ echo $DATA_URL | tee -a $LOG_FILE_PATH
 echo "sleeping 10min before switching the next endpoint"
 sleep 10m 
 
+############################ File validation #####################
+#!/bin/bash
+MAILCC='nageswara.rao@flipkart.com'
+MAILTO='nageswara.rao@flipkart.comi,sanjoli.watts@flipkart.com'
+MAILFROM='nageswara.rao@flipkart.com'
+DIR='/grid/1/devs/nageswara.rao'
+FILE='hl_ranking_inputfile.csv'
+INPUTFILE=`ls $DIR/$FILE`
+FSN='fsn'
+VERTICAL='vertical'
+RANK='rank'
+echo $INPUTFILE
+if [ ! -e $DIR/$INPUTFILE ]
+   then 
+      for i in $( ls hl_ranking_inputfile.csv)
+      do 
+
+	DATA=$( cat $DIR/$i | awk 'BEGIN { FS = ","} NF !=3 { print "Record No", NR, "has",NF, "Fields " $0 }')
+	LINES=$( cat $DIR/$i | awk 'BEGIN { FS = ","} NF !=3 { print "Record No", NR, "has",NF, "Fields"}'|wc -l )
+	FILE_FSN=$( head -n 1 $DIR/$i | awk -F "," '{print $1}'| sed -e 's/\r//g')
+	FILE_VERTICAL=$( head -n 1 $DIR/$i | awk -F "," '{print $2}' | sed -e 's/\r//g')
+	FILE_RANK=$( head -n 1 $DIR/$i | awk -F "," '{print $3}' | sed -e 's/\r//g')
+        echo "$FSN $VERTICAL $RANK"
+        echo "$DATA"
+        DUPLICATE_RECORD=$(tail -n +2 $DIR/$i | sort | uniq -d  )
+        DUPLICATES=$(tail -n +2 $DIR/$i | sort | uniq -d | wc -l )
+	if [[ $FSN = $FILE_FSN && $VERTICAL = $FILE_VERTICAL && $RANK = $FILE_RANK ]]
+ 	then 
+  	 if [[ $LINES -eq 0 && $DUPLICATES -eq 0 ]]
+  	  then
+          ( echo "To: $MAILTO"
+                 echo "Cc: $MAILCC"
+                 echo "From: $MAILFROM"
+                 echo "Subject: Hl Weight Input file validated successfully"
+                 echo "MIME-Version: 1.0"
+                 echo "Content-Type: text/plain"
+                 echo -e "$i file will be used for the next HL Search ranking RPI update"
+                 echo -e "Input file path $DIR\n $(ls -ltr $DIR/$i)\n"
+                 echo cat "$i" 
+                 cat $DIR/$i ) | /usr/sbin/sendmail -t  
+   	  else
+  		 ( echo "To: $MAILTO"
+ 		 echo "From: $MAILFROM"
+ 		 echo "Subject: Hl Weight Input file Records Mismatch/Duplicates"
+ 		 echo "MIME-Version: 1.0"
+ 		 echo "Content-Type: text/plain"
+  		 echo -e "$i file has duplicate records "
+  		 echo -e "Input file path $DIR\n $(ls -ltr $DIR/$i)\n"
+                 echo -e "Please take action on below Records"
+                 echo -e "Number off duplicate records Hello $DUPLICATES \n\n$DUPLICATE_RECORD\n\n"
+  		 echo -e "Number off mismatched records $LINES"
+                 echo ""
+                 echo "$DATA" ) | /usr/sbin/sendmail -t
+         fi
+     else 
+  	( echo "To: $MAILTO"
+  	echo "From: $MAILFROM"
+  	echo "Subject: Hl weight inputfile headers are invalid"
+  	echo "MIME-Version: 1.0"
+  	echo "Content-Type: text/plain"
+  	echo -e "$i file headers are not good in inputfile"
+        echo ""
+  	echo -e "Inputfile path $DIR\n $(ls -ltr $DIR/$i)"
+        echo -e "Standard input file headers must be \nfsn,vertical,rank" 
+        echo ""
+  	echo -e "What we have in the input file header\n $FILE_FSN,$FILE_VERTICAL,$FILE_RANK " ) | /usr/sbin/sendmail -t
+ fi
+done
+else 
+ ( echo "To: $MAILTO"
+        echo "From: $MAILFROM"
+        echo "Subject: Input file hl_ranking_inputfile.csv not available in path $DIR"
+        echo "MIME-Version: 1.0"
+        echo "Content-Type: text/plain"
+        echo -e "Input file name is unique it should be hl_ranking_inputfile.csv " 
+        echo -e ls -ltr "$DIR"
+        echo -e "$(ls -ltr $DIR | tail -n +2 )") | /usr/sbin/sendmail -t
+fi
+
 
 

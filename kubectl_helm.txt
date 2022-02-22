@@ -1,0 +1,44 @@
+#exporting KUBE_CONFIG file with alais
+
+kube_log='export KUBECONFIG=/Users/nageswara.rao/kubeconfigs/playground-5_default_client_config.yml'
+
+##Get resources quota 
+
+kubectl -n search-ranking-hodor describe quota mem-cpu
+kubectl get quota
+kubectl top pods
+====getting memory capacity ===
+
+kubectl describe ns sherlock-hodor-test
+
+#####====Getting logs ====
+
+kubectl logs hodor-test-deployment-769d7678c4-fm2nc -c hodor-service 
+
+kubectl logs -l app=sherlock-hodor-hyd-k8s -c hodor-service (view logs based on app id )
+
+#### Kubectl exec =======
+kubectl exec -i -t my-pod --container main-app -- /bin/bash
+
+Exec commands on running containers :
+
+kubectl exec hodor-test-deployment-769d7678c4-r54ld -- bash -c container_name “ls -ltr /var/log/flipkart/sherlock/p13n/”
+
+++++ Set config file User ++++
+
+kubectl config set-context --current --user=kubeconfig-sa
+
++++++ Service account creation ++++++++
+URL : https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengaddingserviceaccttoken.htm
+1. kubectl -n kube-system create serviceaccount <service-account-name>
+2. 
+
+###========Helm commands==========
+
+#### Helm template validation without deployment #####
+helm install sxp-store --values=p13n-charts/environment/preprod/values.yaml --debug --dry-run p13n-charts/
+
+==========helm upgrade=========
+helm upgrade -f new-values.yml {release name} {package name or path} --version {fixed-version}
+helm upgrade -f hodor-charts/environment/hyd_serving_prod/values.yml hodor-hyd hodor-charts --version
+

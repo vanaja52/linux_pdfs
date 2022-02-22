@@ -477,5 +477,45 @@ else
         echo -e "$(ls -ltr $DIR | tail -n +2 )") | /usr/sbin/sendmail -t
 fi
 
+################# Log fetch #########################################
+
+#!/bin/bash
+fetch(){
+DATE=$(date  --date="yesterday" +"%Y-%m-%d")
+cd /grid/1/devs/nageswara.rao/k8s_logs/
+
+QUERY="SELECT message,utc_date,hour,minute,second from search_3modelhost.$2 where utc_date='"${DATE}"' and (message like '%debug%' or message like '%stack_trace%' or message like '%product-id%' or message like '%probability%')ORDER BY hour,minute,second ASC"
+echo $QUERY
+mkdir -p /grid/1/devs/nageswara.rao/k8s_logs/MLP_k8s_logs/$1/$3/${DATE}
+
+java -jar hivejdbc-1.0_$1.jar "${QUERY}" > /grid/1/devs/nageswara.rao/k8s_logs/MLP_k8s_logs/$1/$3/${DATE}/${DATE}_output_$(date +"%Y%m%d_%H%M%S").log
+sleep 5
+}
+
+fetch_prod(){
+DATE=$(date  --date="yesterday" +"%Y-%m-%d")
+cd /grid/1/devs/nageswara.rao/k8s_logs/
+
+QUERY="SELECT message,utc_date,hour,minute,second from search_3modelhost.$2 where utc_date='"${DATE}"' and (message like '%debug%' or message like '%stack_trace%' or message like '%product-id%' or message like '%probability%')ORDER BY hour,minute,second ASC"
+echo $QUERY
+mkdir -p /grid/1/devs/nageswara.rao/k8s_logs/MLP_prod_k8s_logs/$1/$3/${DATE}
+
+java -jar hivejdbc-1.0_$1.jar "${QUERY}" > /grid/1/devs/nageswara.rao/k8s_logs/MLP_prod_k8s_logs/$1/$3/${DATE}/${DATE}_output_$(date +"%Y%m%d_%H%M%S").log
+sleep 5
+}
+
+
+fetch ch_prod test_3l2_3model_3modelhost test-l2-model
+fetch hyd_prod test_3l2_3model_3hyd_3modelhost test-l2-model-hyd
+fetch ch_prod test_3l2_3model_32_3modelhost test-l2-model-2
+fetch hyd_prod test_3l2_3model_3hyd_32_3modelhost test-l2-model-hyd-2
+
+
+
+fetch_prod hyd_prod prod_3l2_3model_3hyd_3modelhost prod-l2-model-hyd
+fetch_prod hyd_prod prod_3l2_3model_3hyd_32_3modelhost prod-l2-model-hyd-2
+fetch_prod ch_prod prod_3l2_3model_3modelhost prod-l2-model
+fetch_prod ch_prod prod_3l2_3model_32_3modelhost prod-l2-model-2
+
 
 

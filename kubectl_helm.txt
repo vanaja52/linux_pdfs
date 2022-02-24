@@ -42,6 +42,13 @@ helm install sxp-store --values=p13n-charts/environment/preprod/values.yaml --de
 helm upgrade -f new-values.yml {release name} {package name or path} --version {fixed-version}
 helm upgrade -f hodor-charts/environment/hyd_serving_prod/values.yml hodor-hyd hodor-charts --version
 
++++++++ Helm Rollout ++++++++++++
+
+helm uninstall hodor-serving-ch --keep-history
+
+helm rollback hodor-serving-ch 14
+
+
 
 
 

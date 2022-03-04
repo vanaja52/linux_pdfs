@@ -1,0 +1,211 @@
+
+FROM debian:jessie
+
+
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+ENV PATH /opt/conda/bin:$PATH
+ENV PIP_TRUSTED_HOST="10.47.3.13"
+ENV PIP_EXTRA_INDEX_URL="http://10.47.3.13/artifactory/v1.0/artifacts/pypi"
+ENV JAVA_HOME /usr/lib/jvm/jdk-8-oracle-x64/
+
+RUN apt-get update --fix-missing && apt-get install --yes --allow-unauthenticated wget bzip2 ca-certificates \
+    libglib2.0-0 libxext6 libsm6 libxrender1 \
+    git mercurial subversion maven zip adduser vim sudo git wget ftp curl
+
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda2-4.5.12-Linux-x86_64.sh -O ~/miniconda2.sh && \
+    /bin/bash ~/miniconda2.sh -b -p /opt/conda && \
+    rm ~/miniconda2.sh && \
+    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
+    echo ". /opt/conda/etc/profile.d/conda.sh" >> /etc/bash.bashrc && \
+    echo "conda activate base" >> /etc/bash.bashrc
+
+RUN apt-get install -y curl grep sed dpkg && \
+    TINI_VERSION=`curl -k https://github.com/krallin/tini/releases/latest | grep -o "/v.*\"" | sed 's:^..\(.*\).$:\1:'` && \
+    curl -kL "https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini_${TINI_VERSION}.deb" > tini.deb && \
+    dpkg -i tini.deb && \
+    rm tini.deb && \
+    apt-get clean
+
+RUN apt-get update && apt-get install --yes \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg2 \
+    software-properties-common
+
+
+RUN curl -fskSL https://download.docker.com/linux/debian/gpg | apt-key add -
+RUN add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/debian \
+   jessie \
+   stable"
+
+#RUN apt-get update && apt-get install docker-ce-cli  --yes
+
+COPY condarc /opt/conda/.condarc
+COPY pip.conf /etc/
+
+ENV JENKINS_HOME /var/lib/jenkins
+ARG user=jenkins
+ARG group=jenkins
+ARG uid=9999
+ARG gid=9999
+
+RUN groupadd -g ${gid} ${group} \
+    && useradd -d "$JENKINS_HOME" -u ${uid} -g ${gid} -m -s /bin/bash ${user}
+
+# To add the jenkins user to sudo group
+RUN echo jenkins ALL = NOPASSWD: ALL >> /etc/sudoers
+
+# Jenkins home directory is a volume, so configuration and build history
+# can be persisted and survive image upgrades
+VOLUME /var/lib/jenkins
+RUN chown -R jenkins:jenkins /var/lib/jenkins
+RUN chown -R jenkins:jenkins /opt/conda
+
+
+RUN mkdir /var/run/sshd
+RUN apt-get update && apt-get install --yes --allow-unauthenticated openssh-server
+
+RUN echo "deb http://10.19.1.12/iaas iaas flipkart" > /etc/apt/sources.list.d/iaas.list
+RUN echo "deb [trusted=yes] http://10.47.4.220/repos/infra-cli/7 /" > /etc/apt/sources.list.d/infra-cli.list
+
+RUN echo "deb [trusted=yes] http://10.47.4.220/repos/oracle_java8-debian-jessie-prod/1 /" > /etc/apt/sources.list.d/oracle-java.list
+RUN apt-get update && apt-get install --yes --allow-unauthenticated infra-cli oracle-java8-jdk elb-cli
+
+RUN echo "deb [trusted=yes] http://10.47.4.220/repos/artcli/2 /" > /etc/apt/sources.list.d/artcli.list
+RUN apt-get update && apt-get install --yes --allow-unauthenticated artcli
+
+RUN curl -LO -k https://storage.googleapis.com/container-structure-test/latest/container-structure-test-linux-amd64 && chmod +x container-structure-test-linux-amd64 && sudo mv container-structure-test-linux-amd64 /usr/local/bin/container-structure-test
+
+
+
+RUN update-alternatives --install "/usr/bin/java" "java" "${JAVA_HOME}/bin/java" 1 && \
+	update-alternatives --install "/usr/bin/javaws" "javaws" "${JAVA_HOME}/bin/javaws" 1 && \
+	update-alternatives --install "/usr/bin/javac" "javac" "${JAVA_HOME}/bin/javac" 1 && \
+	update-alternatives --set java "${JAVA_HOME}/bin/java" && \
+	update-alternatives --set javaws "${JAVA_HOME}/bin/javaws" && \
+	update-alternatives --set javac "${JAVA_HOME}/bin/javac"
+
+
+RUN env | grep _ >> /etc/environment
+
+RUN echo "deb http://10.19.1.12/debian jessie main\ndeb http://10.19.1.12/debian-security/ jessie/updates main" > /etc/apt/sources.list
+
+USER jenkins
+RUN conda install -y python=2.7 filechunkio python-hdfs boto3 click cloudpickle=0.2.1 flask=1.0.2=py27_1 gunicorn jsonschema mock numpy=1.16.5 pandas=0.24.2 pyyaml requests retrying simplejson sqlalchemy thrift "fabric<2" ipykernel=4.10.0 pycrypto=2.6.1 gitpython
+RUN conda install -y -c conda-forge conda-pack=0.3.0
+
+USER root
+
+RUN apt-get update && apt-get install libaio1 --yes --allow-unauthenticated
+
+
+COPY wix-embedded-mysql-download-and-extract-4.2.0-jar-with-dependencies.jar /opt/
+RUN java -jar /opt/wix-embedded-mysql-download-and-extract-4.2.0-jar-with-dependencies.jar /opt/.embedSql  5.7 17
+RUN rm -f /opt/wix-embedded-mysql-download-and-extract-4.2.0-jar-with-dependencies.jar
+
+RUN wget --quiet https://archive.apache.org/dist/spark/spark-2.4.0/spark-2.4.0-bin-hadoop2.7.tgz -O /opt/conda/spark-2.4.0-bin-hadoop2.7.tgz
+RUN cd /opt/conda && \	
+    tar -xzvf spark-2.4.0-bin-hadoop2.7.tgz && \	
+    rm spark-2.4.0-bin-hadoop2.7.tgz && \	
+    ls -haltr /opt/conda/
+
+
+RUN apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && conda clean --all
+
+EXPOSE 22
+
+CMD ["/usr/sbin/sshd", "-D"]
+
+
+-------------------------------------------------------------------------------
+
+
+FROM debian:stretch
+
+ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+ENV MINICONDA_DOWNLOAD_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"
+ENV PIP_TRUSTED_HOST="10.47.3.13"
+ENV PIP_EXTRA_INDEX_URL="http://10.47.3.13/artifactory/v1.0/artifacts/pypi"
+ENV MLP_HOME=/opt/mlp \
+    CONDA_ROOT_PREFIX=/opt/conda \
+    HUNCH_ENV_PREFIX=/opt/conda/envs \
+    ML_SDK_CONF_BUCKET=prod-ml-platform-sdk
+
+RUN ln -sf /bin/bash /bin/sh
+
+RUN apt-get update --fix-missing && \
+    apt-get install -y --allow-unauthenticated wget bzip2 ca-certificates libglib2.0-0 libxext6 libsm6 \
+    libxrender1 git mercurial subversion maven zip curl grep sed dpkg adduser vim sudo ftp curl less gcc
+
+RUN wget --quiet --no-check-certificate ${MINICONDA_DOWNLOAD_URL} -O ~/miniconda3.sh && \
+    /bin/bash ~/miniconda3.sh -b -p ${CONDA_ROOT_PREFIX} && \
+    rm ~/miniconda3.sh && \
+    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
+    echo ". /opt/conda/etc/profile.d/conda.sh" >> /etc/bash.bashrc && \
+    echo "conda activate base" >> /etc/bash.bashrc
+
+COPY condarc /opt/conda/.condarc
+
+COPY pip.conf /opt/mlp/.config/pip/pip.conf
+ENV PIP_CONFIG_FILE=/opt/mlp/.config/pip/pip.conf
+
+ENV PATH /opt/conda/bin:$PATH
+ARG MLSDK_VERSION="6.0.0"
+
+COPY py36_base_environment.yml /opt
+RUN conda env create -n hunch_env -f /opt/py36_base_environment.yml && \
+    ${CONDA_ROOT_PREFIX}/envs/hunch_env/bin/pip install mlsdkpython==${MLSDK_VERSION}
+
+RUN echo "deb [trusted=yes] http://10.47.4.220/repos/artcli/15 /" > /etc/apt/sources.list.d/artcli.list
+#RUN apt-get update && apt-get install --yes --allow-unauthenticated artcli
+
+COPY fkst-cli-linux.tar.gz /opt
+COPY install_fkst_cli.sh /opt
+
+RUN bash /opt/install_fkst_cli.sh /opt/fkst-cli-linux.tar.gz
+
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* && conda clean -y --all
+
+RUN ln -sf /usr/share/zoneinfo/Asia/Calcutta /etc/localtime && \
+    echo "export PS1='[\[\033[1;32m\]\u\[\033[00m\]@\[\033[35m\]\h\[\033[00m\]:\[\033[34m\]\w]\[\033[00m\]$ '" >> /etc/bash.bashrc
+
+ARG groupname=mlp-users
+ARG gid=1735
+ARG adminusername=mlp-admin
+ARG adminuid=1734
+
+RUN groupadd -g ${gid} ${groupname} && \
+    useradd -ms /bin/bash -d ${MLP_HOME} -g ${groupname} -u ${adminuid} ${adminusername} && \
+    echo "mlp-admin ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+    chown -R mlp-admin ${MLP_HOME} && \
+    echo ${adminusername} > ${adminusername}.txt && echo ${adminusername} >> ${adminusername}.txt && \
+    cat ${adminusername}.txt | passwd ${adminusername} && \
+    rm ${adminusername}.txt && \
+    echo ". /etc/bash.bashrc" >> ${MLP_HOME}/.bashrc && \
+    echo "export PATH=${CONDA_ROOT_PREFIX}/envs/hunch_env/bin:$PATH" >> ${MLP_HOME}/.bashrc
+
+ARG username=mlp-user
+ARG uid=1733
+
+ENV MLP_USER_HOME=/home/${username}
+RUN useradd -ms /bin/bash -d ${MLP_USER_HOME} -g ${groupname} -u ${uid} ${username}
+
+RUN mkdir -p ${MLP_USER_HOME}/bin && chmod -R 755 ${MLP_USER_HOME}/bin && \
+    ln -sf ${CONDA_ROOT_PREFIX}/envs/hunch_env/bin/hunch ${MLP_USER_HOME}/bin && \
+    chown -R ${username} ${MLP_USER_HOME} && \
+    echo ". /etc/bash.bashrc" >> ${MLP_USER_HOME}/.bashrc && \
+    echo "export PATH=${MLP_USER_HOME}/bin:${CONDA_ROOT_PREFIX}/envs/hunch_env/bin:$PATH" >> ${MLP_USER_HOME}/.bashrc
+
+COPY configure_user.sh /opt
+RUN chmod 755 /opt/configure_user.sh
+
+COPY init_hunch_cli_for_users.sh /etc/profile.d
+
+ENTRYPOINT ["bash", "/opt/configure_user.sh"]
+
+----------------------------------------------------------------------------------------------
+

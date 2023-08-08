@@ -9,5 +9,9 @@ linux materials \
 `git config --global user.email johndoe@example.com`
 
 #To connect putty \
-ssh ipaddress@hostname
+ssh ipaddress
+ssh hostname
 
+# To check servier isactive are not\
+ping ipaddres
+ping serviername

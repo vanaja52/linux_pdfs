@@ -4,10 +4,6 @@ linux materials \
 #To connect ssh\
 `ssh username@hostname`
 
-#Set your identity.\
-`git config --global user.name "John Doe"`\
-`git config --global user.email johndoe@example.com`
-
 #To connect putty \
 ssh ipaddress
 ssh hostname
@@ -15,3 +11,5 @@ ssh hostname
 #To check servier isactive are not\
 ping ipaddres
 ping serviername
+
+

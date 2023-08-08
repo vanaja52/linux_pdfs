@@ -1,4 +1,4 @@
-# linux_pdfs
+#linux_pdfs
 linux materials \
 
 #To connect ssh\
@@ -12,6 +12,6 @@ linux materials \
 ssh ipaddress
 ssh hostname
 
-# To check servier isactive are not\
+#To check servier isactive are not\
 ping ipaddres
 ping serviername

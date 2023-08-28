@@ -18,3 +18,6 @@ zip filename.zip filename
 #to tar the file\
 tar -cvf filename.tar filename
 
+# to connect one server to another server\
+scp source username@hostname:destanactation
+

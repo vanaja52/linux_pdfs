@@ -21,3 +21,6 @@ tar -cvf filename.tar filename
 # to connect one server to another server\
 scp source username@hostname:destanactation
 
+#linux version\
+22.04
+

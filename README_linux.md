@@ -12,5 +12,9 @@ ssh hostname
 ping ipaddres
 ping serviername
 
+#to zip the file\
+zip filename.zip filename
 
+#to tar the file\
+tar -cvf filename.tar filename
 

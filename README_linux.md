@@ -24,3 +24,6 @@ scp source username@hostname:destanactation
 #linux version\
 22.04
 
+#sed 
+#find two line in file
+sep -n -e line number -e line number filename

@@ -9,3 +9,6 @@ git chechout -b branch name
 
 #delete a branch 
 git branch -d branch name
+
+#list all branches
+git branch

@@ -15,3 +15,6 @@ git branch
 
 #how to clone
 git clone ssh link
+
+#to check the log history
+git log

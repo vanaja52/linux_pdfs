@@ -30,3 +30,8 @@ git reset --soft HEAD~1
 
 #To check status
 git status
+
+#To reset
+git reset --hard HEAD~3
+
+

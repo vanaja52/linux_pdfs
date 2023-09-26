@@ -24,3 +24,6 @@ git push origin master
 
 #Resabe is used to change older and multiple commits, committed files, and multiple messages.
 git rebase master
+
+#To undu
+git reset --soft HEAD~1

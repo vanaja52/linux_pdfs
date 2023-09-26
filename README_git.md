@@ -27,3 +27,6 @@ git rebase master
 
 #To undu
 git reset --soft HEAD~1
+
+#To check status
+git status

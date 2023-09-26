@@ -18,3 +18,6 @@ git clone ssh link
 
 #to check the log history
 git log
+
+#how to push code
+git push origin master

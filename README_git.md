@@ -12,3 +12,6 @@ git branch -d branch name
 
 #list all branches
 git branch
+
+#how to clone
+git clone ssh link

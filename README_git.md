@@ -50,4 +50,9 @@ git status
 #To reset
 git reset --hard HEAD~3
 
+#To pull
+git pull origin branch name
+
+
+
 

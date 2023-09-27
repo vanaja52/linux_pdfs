@@ -1,3 +1,25 @@
+#To create directory
+mkdir directory name
+
+#To clone
+git clone link
+
+#To switch the directory
+cd directory name
+
+#To create file
+touch filename
+vim filename "write something"
+
+#To add
+git add
+
+#To commit 
+git commit -m "message"
+
+#To push 
+git push origin branch name
+
 #create new branch
 git branch branch name
 
@@ -13,14 +35,8 @@ git branch -d branch name
 #list all branches
 git branch
 
-#how to clone
-git clone ssh link
-
 #to check the log history
 git log
-
-#how to push code
-git push origin master
 
 #Resabe is used to change older and multiple commits, committed files, and multiple messages.
 git rebase master
